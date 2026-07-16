@@ -16,7 +16,7 @@ import {
 
 export default function Books() {
   const { books, addBook, updateBook, deleteBook } = useBookStore();
-  const { categories } = useCategoryStore();
+  const { categories, addCategory, deleteCategory } = useCategoryStore();
   const { user } = useAuth();
   
   const isAdmin = user && user.role === 'admin';
@@ -31,6 +31,10 @@ export default function Books() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [currentBookId, setCurrentBookId] = useState(null);
+
+  // Local UI states for inline category management
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   // react-hook-form initialization
   const { 
@@ -55,10 +59,10 @@ export default function Books() {
 
   const watchCategoryIds = watch('categoryIds');
 
-  // Manually register multi-select categoryIds for hook validation
+  // Register multi-select categoryIds for hook validation
   useEffect(() => {
     register('categoryIds', { 
-      validate: (val) => (val && val.length > 0) || 'En az bir kategori seçilmelidir.' 
+      validate: (val) => (val && val.length > 0) || 'En az bir kategori seçilmesi zorunludur!' 
     });
   }, [register]);
 
@@ -114,6 +118,8 @@ export default function Books() {
       stock: 0
     });
     setModalMode('add');
+    setIsCreatingCategory(false);
+    setNewCategoryName('');
     setIsModalOpen(true);
   };
 
@@ -134,6 +140,8 @@ export default function Books() {
 
     setModalMode('edit');
     setCurrentBookId(book.id);
+    setIsCreatingCategory(false);
+    setNewCategoryName('');
     setIsModalOpen(true);
   };
 
@@ -143,6 +151,12 @@ export default function Books() {
   };
 
   const onSubmitForm = (data) => {
+    // Strict categoryIds validation check at form submission level
+    if (!data.categoryIds || data.categoryIds.length === 0) {
+      toast.error('Lütfen en az bir kategori seçin!');
+      return;
+    }
+
     // Combine shelf block letter and row number (A-12 format)
     const combinedShelfNo = `${data.shelfBlock.toUpperCase()}-${data.shelfRow}`;
 
@@ -176,6 +190,60 @@ export default function Books() {
     deleteBook(id);
     toast.success('Kitap başarıyla silindi!');
   };
+
+  // Inline Category creation handler
+  const handleInlineCreateCategory = () => {
+    const name = newCategoryName.trim();
+    if (!name) {
+      toast.warning('Lütfen geçerli bir kategori adı giriniz.');
+      return;
+    }
+
+    const newId = 'cat-' + Date.now().toString();
+    const newCat = {
+      id: newId,
+      name: name
+    };
+
+    try {
+      addCategory(newCat);
+      
+      // Auto select the new category on form badges list
+      const current = watchCategoryIds || [];
+      setValue('categoryIds', [...current, newId], { shouldValidate: true });
+      
+      toast.success('Kategori başarıyla oluşturuldu ve seçildi!');
+      setNewCategoryName('');
+      setIsCreatingCategory(false);
+    } catch (e) {
+      toast.error('Kategori oluşturulurken hata meydana geldi.');
+    }
+  };
+
+  // Inline Category delete handler with Zustand error catching
+  const handleInlineDeleteCategory = (id, name) => {
+    const confirmDelete = window.confirm(`"${name}" kategorisini sistemden tamamen silmek istediğinize emin misiniz?`);
+    if (!confirmDelete) return;
+
+    try {
+      deleteCategory(id);
+      toast.success('Kategori başarıyla silindi!');
+      
+      // If deleted category is currently selected in form, remove it
+      const current = watchCategoryIds || [];
+      if (current.includes(id)) {
+        setValue('categoryIds', current.filter(x => x !== id), { shouldValidate: true });
+      }
+    } catch (err) {
+      // Catch deletion guard errors thrown from store
+      toast.error('Bu kategoriye ait aktif kitaplar olduğundan silinemez!');
+    }
+  };
+
+  // Filter unselected options for custom dropdown picker
+  const unselectedCategories = categories.filter(
+    (c) => !(watchCategoryIds || []).includes(c.id)
+  );
 
   return (
     <div className="page-container" style={styles.container}>
@@ -351,8 +419,8 @@ export default function Books() {
 
       {/* Add / Edit Form Modal */}
       {isModalOpen && (
-        <div style={styles.modalOverlay}>
-          <div className="glass-panel" style={styles.modalContent}>
+        <div className="modal-overlay">
+          <div className="modal-content" style={styles.modalContent}>
             {/* Modal Header */}
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>
@@ -407,27 +475,129 @@ export default function Books() {
                   />
                 </div>
 
-                {/* Multi-Select Category Checkboxes */}
+                {/* Premium Interactive Multi-Select Category Badges */}
                 <div style={styles.formGroupFull}>
                   <label style={styles.label}>Kategoriler *</label>
-                  <div style={styles.checkboxGrid}>
-                    {categories.map((c) => (
-                      <label key={c.id} style={styles.checkboxLabel}>
-                        <input
-                          type="checkbox"
-                          value={c.id}
-                          checked={(watchCategoryIds || []).includes(c.id)}
+                  <div style={{
+                    ...styles.customMultiSelectContainer,
+                    borderColor: errors.categoryIds ? 'var(--error)' : 'var(--border-light)'
+                  }}>
+                    {/* Selected Badges Row */}
+                    <div style={styles.badgeRow}>
+                      {(watchCategoryIds || []).length > 0 ? (
+                        watchCategoryIds.map((id) => {
+                          const cat = categories.find((c) => String(c.id) === String(id));
+                          return (
+                            <span key={id} style={styles.badgeItem}>
+                              <span>{cat ? cat.name : 'Bilinmeyen'}</span>
+                              <button
+                                type="button"
+                                style={styles.badgeRemoveBtn}
+                                onClick={() => {
+                                  const next = watchCategoryIds.filter((x) => x !== id);
+                                  setValue('categoryIds', next, { shouldValidate: true });
+                                }}
+                                title="Kategoriyi Kaldır"
+                              >
+                                <FiX style={styles.badgeRemoveIcon} />
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span style={styles.badgePlaceholder}>Henüz kategori seçilmedi. Aşağıdan ekleyin...</span>
+                      )}
+                    </div>
+
+                    {/* Unselected Dropdown Option Picker */}
+                    {unselectedCategories.length > 0 ? (
+                      <div style={styles.pickerWrapper}>
+                        <select
+                          value=""
                           onChange={(e) => {
-                            const current = watchCategoryIds || [];
-                            const next = e.target.checked 
-                              ? [...current, c.id]
-                              : current.filter(id => id !== c.id);
-                            setValue('categoryIds', next, { shouldValidate: true });
+                            const val = e.target.value;
+                            if (val) {
+                              const current = watchCategoryIds || [];
+                              const next = [...current, val];
+                              setValue('categoryIds', next, { shouldValidate: true });
+                            }
                           }}
-                        />
-                        <span style={styles.checkboxText}>{c.name}</span>
-                      </label>
-                    ))}
+                          style={styles.pickerSelect}
+                        >
+                          <option value="" disabled>Kategori Ekle...</option>
+                          {unselectedCategories.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                        <FiChevronDown style={styles.pickerArrow} />
+                      </div>
+                    ) : (
+                      <div style={styles.allSelectedMessage}>Tüm kategoriler seçildi.</div>
+                    )}
+
+                    {/* Inline Category Creation Section */}
+                    <div style={styles.inlineCreatorContainer}>
+                      {isCreatingCategory ? (
+                        <div style={styles.inlineForm}>
+                          <input
+                            type="text"
+                            placeholder="Kategori adı girin..."
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            style={{ ...styles.input, ...styles.inlineInput }}
+                          />
+                          <div style={styles.inlineActions}>
+                            <button
+                              type="button"
+                              onClick={handleInlineCreateCategory}
+                              style={styles.inlineEkleBtn}
+                            >
+                              Ekle
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCreatingCategory(false);
+                                setNewCategoryName('');
+                              }}
+                              style={styles.inlineCancelBtn}
+                            >
+                              Vazgeç
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIsCreatingCategory(true)}
+                          style={styles.inlineCreateToggle}
+                        >
+                          + Yeni Kategori Oluştur
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Quick Category Management list with inline deletion */}
+                    <div style={styles.manageCategorySection}>
+                      <span style={styles.manageLabel}>Kategori Düzenleme / Silme (Hızlı Yönetim)</span>
+                      <div style={styles.manageList}>
+                        {categories.map((c) => (
+                          <div key={c.id} style={styles.manageItem}>
+                            <span style={styles.manageItemText}>{c.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleInlineDeleteCategory(c.id, c.name)}
+                              style={styles.inlineTrashBtn}
+                              title="Sistemden Tamamen Sil"
+                            >
+                              <FiTrash2 style={styles.trashIcon} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                   {errors.categoryIds && <span style={styles.errorText}>{errors.categoryIds.message}</span>}
                 </div>
@@ -756,26 +926,13 @@ const styles = {
     color: 'var(--text-muted)',
     maxWidth: '360px',
   },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    background: 'rgba(0, 0, 0, 0.4)',
-    backdropFilter: 'blur(4px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100,
-  },
   modalContent: {
     width: '100%',
     maxWidth: '600px',
     padding: '2rem',
     boxSizing: 'border-box',
     margin: '1rem',
-    border: '1px solid var(--glass-border)',
+    borderRadius: '12px',
   },
   modalHeader: {
     display: 'flex',
@@ -853,28 +1010,6 @@ const styles = {
   saveBtn: {
     padding: '0.6rem 1.2rem',
   },
-  checkboxGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-    gap: '0.75rem',
-    maxHeight: '120px',
-    overflowY: 'auto',
-    padding: '0.75rem',
-    border: '1px solid var(--border-light)',
-    borderRadius: '8px',
-    backgroundColor: 'var(--bg-input)',
-  },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-    color: 'var(--text-main)',
-  },
-  checkboxText: {
-    userSelect: 'none',
-  },
   splitRow: {
     display: 'flex',
     gap: '0.5rem',
@@ -886,8 +1021,187 @@ const styles = {
   rowInput: {
     width: '65%',
   },
+  // Custom multi-select component styles
+  customMultiSelectContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+    border: '1px solid var(--border-light)',
+    borderRadius: '10px',
+    padding: '1rem',
+    background: 'var(--bg-input)',
+    transition: 'all var(--transition-normal)',
+  },
+  badgeRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem',
+    minHeight: '38px',
+    alignItems: 'center',
+  },
+  badgeItem: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    background: 'var(--primary-glow)',
+    color: 'var(--primary)',
+    padding: '0.35rem 0.75rem',
+    borderRadius: '20px',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    border: '1px solid rgba(99, 102, 241, 0.12)',
+    transition: 'all var(--transition-fast)',
+  },
+  badgeRemoveBtn: {
+    background: 'none',
+    border: 'none',
+    padding: '0',
+    color: 'var(--primary)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '50%',
+    width: '16px',
+    height: '16px',
+    boxShadow: 'none',
+  },
+  badgeRemoveIcon: {
+    fontSize: '0.8rem',
+  },
+  badgePlaceholder: {
+    fontSize: '0.85rem',
+    color: 'var(--text-muted)',
+    fontStyle: 'italic',
+  },
+  pickerWrapper: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    marginTop: '0.25rem',
+  },
+  pickerSelect: {
+    width: '100%',
+    paddingRight: '2.5rem',
+  },
+  pickerArrow: {
+    position: 'absolute',
+    right: '14px',
+    color: 'var(--text-muted)',
+    pointerEvents: 'none',
+    fontSize: '1.05rem',
+  },
+  allSelectedMessage: {
+    fontSize: '0.85rem',
+    color: 'var(--success)',
+    fontStyle: 'italic',
+    paddingTop: '0.25rem',
+  },
+  // Inline category management styles
+  inlineCreatorContainer: {
+    marginTop: '0.5rem',
+    borderTop: '1px dashed var(--border-light)',
+    paddingTop: '0.75rem',
+  },
+  inlineCreateToggle: {
+    background: 'none',
+    border: 'none',
+    color: 'var(--primary)',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    padding: '0',
+    boxShadow: 'none',
+  },
+  inlineForm: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  },
+  inlineInput: {
+    fontSize: '0.9rem',
+    padding: '0.4rem 0.75rem',
+  },
+  inlineActions: {
+    display: 'flex',
+    gap: '0.5rem',
+    justifyContent: 'flex-end',
+  },
+  inlineEkleBtn: {
+    background: 'var(--primary)',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    padding: '0.4rem 0.85rem',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  inlineCancelBtn: {
+    background: 'none',
+    border: '1px solid var(--border-light)',
+    color: 'var(--text-muted)',
+    borderRadius: '6px',
+    padding: '0.4rem 0.85rem',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    boxShadow: 'none',
+  },
+  manageCategorySection: {
+    marginTop: '0.75rem',
+    borderTop: '1px dashed var(--border-light)',
+    paddingTop: '0.75rem',
+  },
+  manageLabel: {
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    color: 'var(--text-muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    display: 'block',
+    marginBottom: '0.5rem',
+  },
+  manageList: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem',
+    maxHeight: '100px',
+    overflowY: 'auto',
+    paddingRight: '4px',
+  },
+  manageItem: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    background: 'var(--bg-app)',
+    border: '1px solid var(--border-light)',
+    padding: '0.25rem 0.6rem',
+    borderRadius: '6px',
+    fontSize: '0.8rem',
+    color: 'var(--text-main)',
+  },
+  manageItemText: {
+    fontWeight: '500',
+  },
+  inlineTrashBtn: {
+    background: 'none',
+    border: 'none',
+    padding: '0',
+    color: 'var(--text-muted)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'color var(--transition-fast)',
+    boxShadow: 'none',
+  },
+  trashIcon: {
+    fontSize: '0.85rem',
+  },
 };
 // Add responsive rules if width is small dynamically
 if (typeof window !== 'undefined' && window.innerWidth < 768) {
   styles.filterGrid.gridTemplateColumns = '1fr';
 }
+export { styles };

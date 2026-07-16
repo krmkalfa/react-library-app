@@ -209,8 +209,8 @@ export default function Loans() {
 
       {/* Add / Borrow Form Modal */}
       {isModalOpen && (
-        <div style={styles.modalOverlay}>
-          <div className="glass-panel" style={styles.modalContent}>
+        <div className="modal-overlay">
+          <div className="modal-content" style={styles.modalContent}>
             {/* Modal Header */}
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>Kitap Ödünç Ver</h2>
@@ -458,27 +458,13 @@ const styles = {
     color: 'var(--text-muted)',
     maxWidth: '360px',
   },
-  // Modal styles
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    background: 'rgba(0, 0, 0, 0.4)',
-    backdropFilter: 'blur(4px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100,
-  },
   modalContent: {
     width: '100%',
     maxWidth: '500px',
     padding: '2rem',
     boxSizing: 'border-box',
     margin: '1rem',
-    border: '1px solid var(--glass-border)',
+    borderRadius: '12px',
   },
   modalHeader: {
     display: 'flex',

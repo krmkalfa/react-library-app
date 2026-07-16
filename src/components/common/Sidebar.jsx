@@ -4,16 +4,17 @@ import { useAuth } from '../../context/AuthContext';
 import { 
   FiGrid, 
   FiBook, 
-  FiLayers, 
   FiUsers, 
   FiBookOpen, 
   FiRotateCcw, 
   FiAlertTriangle, 
   FiBookmark,
-  FiKey
+  FiKey,
+  FiChevronLeft,
+  FiChevronRight
 } from 'react-icons/fi';
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed, toggleCollapsed }) {
   const { user } = useAuth();
 
   const isAdmin = user && user.role === 'admin';
@@ -33,11 +34,10 @@ export default function Sidebar() {
     { path: '/change-password', label: 'Şifre Değiştir', icon: FiKey },
   ];
 
-  // Full admin panel routes
+  // Full admin panel routes (excluding standalone Categories page)
   const adminItems = [
     { path: '/dashboard', label: 'Dashboard', icon: FiGrid },
     { path: '/books', label: 'Kitaplar', icon: FiBook },
-    { path: '/categories', label: 'Kategoriler', icon: FiLayers },
     { path: '/members', label: 'Üyeler', icon: FiUsers },
     { path: '/loans', label: 'Ödünç İşlemleri', icon: FiBookOpen },
     { path: '/returns', label: 'İade İşlemleri', icon: FiRotateCcw },
@@ -48,11 +48,37 @@ export default function Sidebar() {
   const menuItems = isAdmin ? adminItems : (isMember ? memberItems : guestItems);
 
   return (
-    <aside style={styles.sidebar}>
-      {/* Brand Header */}
-      <div style={styles.brand}>
-        <div style={styles.brandLogo}>L</div>
-        <h2 style={styles.brandName}>BiblioTech</h2>
+    <aside style={{
+      ...styles.sidebar,
+      padding: collapsed ? '2rem 0.75rem' : '2rem 1.5rem',
+    }}>
+      {/* Brand Header with Collapsible Details */}
+      <div style={{
+        ...styles.brand,
+        flexDirection: collapsed ? 'column' : 'row',
+        gap: collapsed ? '1rem' : '0.75rem',
+        alignItems: 'center',
+        justifyContent: collapsed ? 'center' : 'space-between',
+      }}>
+        <div style={styles.brandLeft}>
+          <div style={styles.brandLogo}>B</div>
+          {!collapsed && <h2 style={styles.brandName}>BiblioTech</h2>}
+        </div>
+        
+        {/* Toggle Button */}
+        <button 
+          onClick={toggleCollapsed} 
+          style={styles.toggleBtn} 
+          title={collapsed ? "Menüyü Genişlet" : "Menüyü Daralt"}
+          type="button"
+          aria-label="Toggle Sidebar Collapse"
+        >
+          {collapsed ? (
+            <FiChevronRight style={styles.toggleIcon} />
+          ) : (
+            <FiChevronLeft style={styles.toggleIcon} />
+          )}
+        </button>
       </div>
 
       {/* Menu Navigation */}
@@ -66,15 +92,19 @@ export default function Sidebar() {
               style={({ isActive }) => ({
                 ...styles.navLink,
                 ...(isActive ? styles.activeNavLink : {}),
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                padding: collapsed ? '0.85rem 0' : '0.85rem 1rem',
               })}
+              title={collapsed ? item.label : undefined}
             >
               {({ isActive }) => (
                 <>
                   <Icon style={{
                     ...styles.navIcon,
-                    color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                    color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                    marginRight: collapsed ? '0' : '0.75rem'
                   }} />
-                  <span>{item.label}</span>
+                  {!collapsed && <span>{item.label}</span>}
                 </>
               )}
             </NavLink>
@@ -92,16 +122,20 @@ const styles = {
     flexDirection: 'column',
     background: 'var(--bg-sidebar)',
     borderRight: '1px solid var(--border-light)',
-    padding: '2rem 1.5rem',
     height: '100vh',
     boxSizing: 'border-box',
-    transition: 'background var(--transition-normal), border var(--transition-normal)',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden',
   },
   brand: {
     display: 'flex',
+    marginBottom: '3rem',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  brandLeft: {
+    display: 'flex',
     alignItems: 'center',
     gap: '0.75rem',
-    marginBottom: '3rem',
   },
   brandLogo: {
     width: '36px',
@@ -113,14 +147,32 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: 'bold',
-    fontSize: '1.2rem',
+    fontSize: '1.25rem',
     boxShadow: '0 4px 10px var(--primary-glow)',
   },
   brandName: {
-    fontSize: '1.3rem',
+    fontSize: '1.25rem',
     fontWeight: '700',
     color: 'var(--text-main)',
     letterSpacing: '-0.5px',
+  },
+  toggleBtn: {
+    background: 'none',
+    border: '1px solid var(--border-light)',
+    borderRadius: '8px',
+    color: 'var(--text-muted)',
+    cursor: 'pointer',
+    width: '32px',
+    height: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all var(--transition-fast)',
+    boxShadow: 'none',
+    padding: '0',
+  },
+  toggleIcon: {
+    fontSize: '1rem',
   },
   nav: {
     display: 'flex',
@@ -131,8 +183,6 @@ const styles = {
   navLink: {
     display: 'flex',
     alignItems: 'center',
-    gap: '1rem',
-    padding: '0.85rem 1rem',
     borderRadius: '10px',
     color: 'var(--text-muted)',
     fontSize: '0.95rem',
@@ -140,6 +190,7 @@ const styles = {
     textDecoration: 'none',
     transition: 'all var(--transition-fast)',
     cursor: 'pointer',
+    width: '100%',
   },
   activeNavLink: {
     background: 'var(--primary-glow)',
@@ -148,6 +199,6 @@ const styles = {
   },
   navIcon: {
     fontSize: '1.15rem',
-    transition: 'color var(--transition-fast)',
+    transition: 'margin var(--transition-fast)',
   },
 };

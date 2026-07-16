@@ -30,6 +30,7 @@
   --bg-navbar: rgba(255, 255, 255, 0.8);
   --bg-card: #ffffff;
   --bg-input: #ffffff;
+  --bg-modal: #ffffff;
   
   --text-main: var(--slate-800);
   --text-muted: var(--slate-500);
@@ -69,7 +70,8 @@
   --bg-sidebar: var(--slate-900);
   --bg-navbar: rgba(15, 23, 42, 0.8);
   --bg-card: var(--slate-900);
-  --bg-input: var(--slate-950);
+  --bg-input: #0f172a;
+  --bg-modal: #1e293b;
 
   --text-main: var(--slate-100);
   --text-muted: var(--slate-400);
