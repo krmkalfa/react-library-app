@@ -9,7 +9,6 @@ import 'react-toastify/dist/ReactToastify.css';
 
 // Pages
 import Dashboard from './pages/Dashboard';
-import Categories from './pages/Categories';
 import Books from './pages/Books';
 import Members from './pages/Members';
 import Loans from './pages/Loans';
@@ -32,22 +31,14 @@ function App() {
 
             {/* Layout Shell */}
             <Route path="/" element={<MainLayout />}>
-              {/* Default Redirect to Dashboard (guarded inside component check) */}
+              {/* Default Redirect to Dashboard */}
               <Route index element={<Navigate to="/dashboard" replace />} />
               
               {/* Public Screen Route (Guest Accessible) */}
               <Route path="books" element={<Books />} />
+              <Route path="dashboard" element={<Dashboard />} />
 
               {/* Guarded Admin-Only / Authenticated routes */}
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route 
-                path="categories" 
-                element={
-                  <ProtectedRoute>
-                    <Categories />
-                  </ProtectedRoute>
-                } 
-              />
               <Route 
                 path="members" 
                 element={

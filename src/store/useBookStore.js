@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useLoanStore } from './useLoanStore.js';
 
 export const useBookStore = create(
   persist(
@@ -13,8 +14,10 @@ export const useBookStore = create(
           isbn: '9780132350884', 
           categoryIds: ['1', '4'], 
           publishYear: 2008, 
+          publisher: 'Prentice Hall',
           shelfNo: 'A-12', 
-          stock: 5 
+          stock: 5,
+          isDeleted: false
         },
         { 
           id: 'book-2', 
@@ -23,8 +26,10 @@ export const useBookStore = create(
           isbn: '9789752439115', 
           categoryIds: ['3'], 
           publishYear: 1927, 
+          publisher: 'Atatürk Araştırma Merkezi',
           shelfNo: 'B-04', 
-          stock: 3 
+          stock: 3,
+          isDeleted: false
         },
         { 
           id: 'book-3', 
@@ -33,8 +38,10 @@ export const useBookStore = create(
           isbn: '9789750726439', 
           categoryIds: ['2'], 
           publishYear: 1988, 
+          publisher: 'Can Yayınları',
           shelfNo: 'C-08', 
-          stock: 4 
+          stock: 4,
+          isDeleted: false
         }
       ],
 
@@ -42,26 +49,79 @@ export const useBookStore = create(
        * Adds a new book to the library collection.
        * @param {Object} book - The book object to add.
        */
-      addBook: (book) => set((state) => ({
-        books: [...state.books, book],
-      })),
+      addBook: (book) => set((state) => {
+        const title = book.title.trim().toLowerCase();
+        const author = book.author.trim().toLowerCase();
+        const publishYear = Number(book.publishYear);
+
+        // Composite key duplicate validation check
+        const duplicate = state.books.some(
+          (b) =>
+            b.title.trim().toLowerCase() === title &&
+            b.author.trim().toLowerCase() === author &&
+            Number(b.publishYear) === publishYear
+        );
+
+        if (duplicate) {
+          throw new Error("Bu kitap ismi, yazar ve yayın yılına sahip bir kitap sistemde zaten kayıtlı!");
+        }
+
+        return { books: [...state.books, { ...book, isDeleted: false }] };
+      }),
 
       /**
        * Updates the details of an existing book by its ID.
        * @param {string|number} id - The ID of the book to update.
        * @param {Object} updatedBook - The new book details.
        */
-      updateBook: (id, updatedBook) => set((state) => ({
-        books: state.books.map((b) => (b.id === id ? { ...b, ...updatedBook } : b)),
-      })),
+      updateBook: (id, updatedBook) => set((state) => {
+        const title = updatedBook.title?.trim().toLowerCase();
+        const author = updatedBook.author?.trim().toLowerCase();
+        const publishYear = updatedBook.publishYear ? Number(updatedBook.publishYear) : null;
+
+        // Composite key duplicate validation check excluding self
+        if (title && author && publishYear) {
+          const duplicate = state.books.some(
+            (b) =>
+              b.id !== id &&
+              b.title.trim().toLowerCase() === title &&
+              b.author.trim().toLowerCase() === author &&
+              Number(b.publishYear) === publishYear
+          );
+
+          if (duplicate) {
+            throw new Error("Bu kitap ismi, yazar ve yayın yılına sahip bir kitap sistemde zaten kayıtlı!");
+          }
+        }
+
+        return {
+          books: state.books.map((b) => (b.id === id ? { ...b, ...updatedBook } : b)),
+        };
+      }),
 
       /**
        * Deletes a book from the library collection by its ID.
+       * Uses Soft Delete if the book has active loans, otherwise hard deletes it.
        * @param {string|number} id - The ID of the book to delete.
        */
-      deleteBook: (id) => set((state) => ({
-        books: state.books.filter((b) => b.id !== id),
-      })),
+      deleteBook: (id) => set((state) => {
+        const loans = useLoanStore.getState().loans;
+        const hasActiveLoans = loans.some(
+          (l) => String(l.bookId) === String(id) && l.status === 'active'
+        );
+
+        if (hasActiveLoans) {
+          // Soft Delete
+          return {
+            books: state.books.map((b) => (b.id === id ? { ...b, isDeleted: true } : b))
+          };
+        } else {
+          // Hard Delete
+          return {
+            books: state.books.filter((b) => b.id !== id)
+          };
+        }
+      }),
 
       /**
        * Decrements the stock of a book by 1 when it is borrowed.

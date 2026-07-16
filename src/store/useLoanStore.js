@@ -78,18 +78,33 @@ export const useLoanStore = create(
         useBookStore.getState().incrementStock(loan.bookId);
 
         // Update the specific loan record in the state
-        set((state) => ({
-          loans: state.loans.map((l) => {
-            if (String(l.id) === String(loanId)) {
-              return {
-                ...l,
-                returnDate: today,
-                status: 'returned',
-              };
-            }
-            return l;
-          }),
-        }));
+        const updatedLoans = loans.map((l) => {
+          if (String(l.id) === String(loanId)) {
+            return {
+              ...l,
+              returnDate: today,
+              status: 'returned',
+            };
+          }
+          return l;
+        });
+
+        set({ loans: updatedLoans });
+
+        // Check if returned book is soft-deleted and can now be permanently hard deleted
+        const bookStore = useBookStore.getState();
+        const book = bookStore.books.find((b) => String(b.id) === String(loan.bookId));
+        
+        if (book && book.isDeleted) {
+          const hasOtherActiveLoans = updatedLoans.some(
+            (l) => String(l.bookId) === String(loan.bookId) && l.status === 'active'
+          );
+
+          if (!hasOtherActiveLoans) {
+            // Hard delete permanently
+            bookStore.deleteBook(loan.bookId);
+          }
+        }
       },
     }),
     {

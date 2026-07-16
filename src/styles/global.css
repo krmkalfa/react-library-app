@@ -51,6 +51,11 @@ body {
   height: 100vh;
   width: 100vw;
   background-color: var(--bg-app);
+  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-layout.sidebar-collapsed {
+  --sidebar-width: 72px;
 }
 
 /* Page transitions */
@@ -123,6 +128,18 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
+select {
+  -webkit-appearance: none;  /* Chrome, Safari, Opera */
+  -moz-appearance: none;     /* Firefox */
+  appearance: none;          /* Standart tarayıcı oku gizleme */
+  padding-right: 2.5rem;     /* İkonun metnin üzerine binmesini önlemek için sağ boşluk */
+}
+
+/* IE için oku gizleme */
+select::-ms-expand {
+  display: none;
+}
+
 input::placeholder {
   color: var(--text-muted);
   opacity: 0.7;
@@ -172,5 +189,76 @@ input::placeholder {
 
 .spinner {
   animation: spin 1s linear infinite;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-content {
+  background-color: var(--bg-modal);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom Tooltip Styling */
+.custom-tooltip {
+  position: relative;
+  display: inline-flex;
+  cursor: help;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-tooltip .tooltip-text {
+  visibility: hidden;
+  width: 260px;
+  background-color: var(--slate-900);
+  color: #ffffff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 12px;
+  position: absolute;
+  z-index: 10;
+  bottom: 130%; /* Position above the icon */
+  left: 50%;
+  margin-left: -130px;
+  opacity: 0;
+  transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+  transform: translateY(4px);
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.35;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  pointer-events: none;
+}
+
+.custom-tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tooltip Arrow */
+.custom-tooltip .tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--slate-900) transparent transparent transparent;
 }
 

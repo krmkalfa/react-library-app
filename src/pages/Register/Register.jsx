@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
-import { useMemberStore } from '../../store/useMemberStore';
+import { useMemberStore, generateUniqueMemberNo } from '../../store/useMemberStore';
 import { toast } from 'react-toastify';
 import { FiUser, FiPhone, FiMail, FiMapPin, FiLock, FiArrowRight } from 'react-icons/fi';
 
@@ -24,20 +24,21 @@ export default function Register() {
   });
 
   const onSubmit = async (data) => {
-    // Artificial slight delay for micro-animation loading effect
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    // Strip non-digits from the phone number
+    const cleanedPhone = data.phone.replace(/\D/g, '');
+    const members = useMemberStore.getState().members;
 
-    // Auto-generate member number (MEM-100X pattern)
-    const autoNo = 'MEM-' + Math.floor(1000 + Math.random() * 9000).toString();
+    // Auto-generate 8-digit unique member number
+    const autoNo = generateUniqueMemberNo(members);
     const today = new Date().toISOString().split('T')[0];
 
     const newMember = {
       id: Date.now().toString(),
       fullName: data.fullName.trim(),
-      phone: data.phone.trim(),
+      phone: cleanedPhone,
       email: data.email.trim(),
       address: data.address.trim(),
-      password: data.password, // Plaintext password stored securely in local database
+      password: data.password, // User typed password
       memberNo: autoNo,
       registryDate: today
     };
@@ -50,7 +51,7 @@ export default function Register() {
       });
       navigate('/login');
     } catch (e) {
-      toast.error('Kayıt oluşturulurken bir hata meydana geldi.');
+      toast.error(e.message || 'Kayıt oluşturulurken bir hata meydana geldi.');
     }
   };
 
@@ -102,9 +103,9 @@ export default function Register() {
                 }}
                 {...register('phone', { 
                   required: 'Telefon numarası zorunludur.',
-                  pattern: {
-                    value: /^(05)[0-9]{9}$/,
-                    message: 'Geçersiz telefon formatı (örn. 05XXXXXXXXX).'
+                  validate: (val) => {
+                    const stripped = val.replace(/\D/g, '');
+                    return (stripped.length === 11 && stripped.startsWith('05')) || 'Telefon numarası "05" ile başlamalı ve 11 haneli olmalıdır.';
                   }
                 })}
               />

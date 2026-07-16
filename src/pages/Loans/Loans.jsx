@@ -25,6 +25,13 @@ export default function Loans() {
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Helper to generate a default due date exactly 1 month from today
+  const getDefaultDueDate = () => {
+    const today = new Date();
+    today.setMonth(today.getMonth() + 1);
+    return today.toISOString().split('T')[0];
+  };
+
   // react-hook-form initialization
   const { 
     register, 
@@ -35,7 +42,7 @@ export default function Loans() {
     defaultValues: {
       bookId: '',
       memberId: '',
-      dueDate: ''
+      dueDate: getDefaultDueDate()
     }
   });
 
@@ -100,7 +107,7 @@ export default function Loans() {
     reset({
       bookId: '',
       memberId: '',
-      dueDate: ''
+      dueDate: getDefaultDueDate()
     });
     setIsModalOpen(true);
   };
@@ -209,8 +216,8 @@ export default function Loans() {
 
       {/* Add / Borrow Form Modal */}
       {isModalOpen && (
-        <div style={styles.modalOverlay}>
-          <div className="glass-panel" style={styles.modalContent}>
+        <div className="modal-overlay">
+          <div className="modal-content" style={styles.modalContent}>
             {/* Modal Header */}
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>Kitap Ödünç Ver</h2>
@@ -269,7 +276,10 @@ export default function Loans() {
 
               {/* Due Date */}
               <div style={styles.formGroup}>
-                <label style={styles.label}>Son Teslim Tarihi *</label>
+                <div style={styles.dueDateLabelRow}>
+                  <label style={styles.label}>Son Teslim Tarihi *</label>
+                  <span style={styles.dueDateHint}>Varsayılan süre 1 aydır.</span>
+                </div>
                 <div style={styles.inputWrapper}>
                   <input
                     type="date"
@@ -278,7 +288,16 @@ export default function Loans() {
                       ...styles.input,
                       borderColor: errors.dueDate ? 'var(--error)' : 'var(--border-light)'
                     }}
-                    {...register('dueDate', { required: 'Son teslim tarihi zorunludur.' })}
+                    {...register('dueDate', { 
+                      required: 'Son teslim tarihi zorunludur.',
+                      validate: (val) => {
+                        const selected = new Date(val);
+                        selected.setHours(0,0,0,0);
+                        const today = new Date();
+                        today.setHours(0,0,0,0);
+                        return selected >= today || 'Son teslim tarihi bugünden eski olamaz.';
+                      }
+                    })}
                   />
                 </div>
                 {errors.dueDate && <span style={styles.errorText}>{errors.dueDate.message}</span>}
@@ -458,27 +477,13 @@ const styles = {
     color: 'var(--text-muted)',
     maxWidth: '360px',
   },
-  // Modal styles
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    background: 'rgba(0, 0, 0, 0.4)',
-    backdropFilter: 'blur(4px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100,
-  },
   modalContent: {
     width: '100%',
     maxWidth: '500px',
     padding: '2rem',
     boxSizing: 'border-box',
     margin: '1rem',
-    border: '1px solid var(--glass-border)',
+    borderRadius: '12px',
   },
   modalHeader: {
     display: 'flex',
@@ -568,5 +573,16 @@ const styles = {
   },
   saveBtn: {
     padding: '0.6rem 1.2rem',
+  },
+  dueDateLabelRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.2rem',
+  },
+  dueDateHint: {
+    fontSize: '0.8rem',
+    color: 'var(--text-muted)',
+    fontStyle: 'italic',
   },
 };
