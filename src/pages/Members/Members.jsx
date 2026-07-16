@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMemberStore } from '../../store/useMemberStore';
+import { useMemberStore, generateUniqueMemberNo } from '../../store/useMemberStore';
 import { toast } from 'react-toastify';
 import { 
   FiPlus, 
@@ -50,8 +50,8 @@ export default function Members() {
   });
 
   const openAddModal = () => {
-    // Generate an automatic member number for usability, but user can edit
-    const autoNo = 'MEM-' + Math.floor(1000 + Math.random() * 9000).toString();
+    // Generate a unique 8-digit random member number
+    const autoNo = generateUniqueMemberNo(members);
     reset({
       fullName: '',
       memberNo: autoNo,
@@ -80,27 +80,34 @@ export default function Members() {
   };
 
   const onSubmitForm = (data) => {
-    if (modalMode === 'add') {
-      const today = new Date().toISOString().split('T')[0];
-      addMember({
-        id: Date.now().toString(),
-        fullName: data.fullName.trim(),
-        memberNo: data.memberNo.trim(),
-        phone: data.phone.trim(),
-        email: data.email.trim(),
-        registryDate: today
-      });
-      toast.success('Üye başarıyla eklendi!');
-    } else {
-      updateMember(currentMemberId, {
-        fullName: data.fullName.trim(),
-        memberNo: data.memberNo.trim(),
-        phone: data.phone.trim(),
-        email: data.email.trim()
-      });
-      toast.success('Üye bilgileri başarıyla güncellendi!');
+    // Strip non-digits from the phone number
+    const cleanedPhone = data.phone.replace(/\D/g, '');
+
+    try {
+      if (modalMode === 'add') {
+        const today = new Date().toISOString().split('T')[0];
+        addMember({
+          id: Date.now().toString(),
+          fullName: data.fullName.trim(),
+          memberNo: data.memberNo.trim(),
+          phone: cleanedPhone,
+          email: data.email.trim(),
+          registryDate: today
+        });
+        toast.success('Üye başarıyla eklendi!');
+      } else {
+        updateMember(currentMemberId, {
+          fullName: data.fullName.trim(),
+          memberNo: data.memberNo.trim(),
+          phone: cleanedPhone,
+          email: data.email.trim()
+        });
+        toast.success('Üye bilgileri başarıyla güncellendi!');
+      }
+      closeModal();
+    } catch (e) {
+      toast.error(e.message || 'Üye kaydedilirken bir hata meydana geldi.');
     }
-    closeModal();
   };
 
   const handleDelete = (id, name) => {
@@ -262,9 +269,9 @@ export default function Members() {
                   }}
                   {...register('phone', { 
                     required: 'Telefon numarası zorunludur.',
-                    pattern: {
-                      value: /^(05)[0-9]{9}$/,
-                      message: 'Geçersiz telefon formatı (örn. 05XXXXXXXXX).'
+                    validate: (val) => {
+                      const stripped = val.replace(/\D/g, '');
+                      return (stripped.length === 11 && stripped.startsWith('05')) || 'Telefon numarası "05" ile başlamalı ve 11 haneli olmalıdır.';
                     }
                   })}
                 />

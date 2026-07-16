@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLoanStore } from '../../store/useLoanStore';
 import { useBookStore } from '../../store/useBookStore';
 import { useAuth } from '../../context/AuthContext';
-import { FiBookOpen, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiBookOpen, FiClock, FiCheckCircle, FiInfo } from 'react-icons/fi';
 
 export default function MyBooks() {
   const { loans } = useLoanStore();
@@ -28,6 +28,12 @@ export default function MyBooks() {
   const getBookAuthor = (bookId) => {
     const book = books.find((b) => String(b.id) === String(bookId));
     return book ? book.author : 'Bilinmeyen Yazar';
+  };
+
+  // Soft-deleted check
+  const isBookDeleted = (bookId) => {
+    const book = books.find((b) => String(b.id) === String(bookId));
+    return book ? !!book.isDeleted : false;
   };
 
   // Calculate remaining days
@@ -119,7 +125,20 @@ export default function MyBooks() {
                       <div style={styles.bookIconCircle}>
                         <FiBookOpen style={styles.bookIcon} />
                       </div>
-                      <span style={styles.bookTitle}>{getBookTitle(loan.bookId)}</span>
+                      <div style={styles.bookTitleWrapper}>
+                        <span style={styles.bookTitle}>{getBookTitle(loan.bookId)}</span>
+                        {activeTab === 'active' && isBookDeleted(loan.bookId) && (
+                          <div style={styles.archiveBadgeContainer}>
+                            <span style={styles.archiveBadge}>Arşivlendi / Envanter Dışı</span>
+                            <div className="custom-tooltip" style={styles.infoTooltipIcon}>
+                              <FiInfo style={styles.infoIcon} />
+                              <span className="tooltip-text">
+                                Bu kitap kütüphane envanterinden kaldırılmıştır. Okumanızı tamamladıktan sonra iade edebilirsiniz.
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td style={styles.td}>{getBookAuthor(loan.bookId)}</td>
@@ -245,6 +264,11 @@ const styles = {
     alignItems: 'center',
     gap: '0.75rem',
   },
+  bookTitleWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.2rem',
+  },
   bookIconCircle: {
     width: '36px',
     height: '36px',
@@ -261,6 +285,34 @@ const styles = {
   bookTitle: {
     fontWeight: '600',
     color: 'var(--text-main)',
+  },
+  archiveBadgeContainer: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    marginTop: '0.15rem',
+  },
+  archiveBadge: {
+    background: 'rgba(245, 158, 11, 0.1)',
+    color: 'var(--warning)',
+    border: '1px solid rgba(245, 158, 11, 0.2)',
+    padding: '0.15rem 0.5rem',
+    borderRadius: '4px',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    display: 'inline-block',
+  },
+  infoTooltipIcon: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'var(--text-muted)',
+    cursor: 'help',
+    fontSize: '0.85rem',
+    transition: 'color var(--transition-fast)',
+  },
+  infoIcon: {
+    display: 'block',
   },
   badge: {
     padding: '0.25rem 0.6rem',

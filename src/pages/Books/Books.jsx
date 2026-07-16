@@ -51,6 +51,7 @@ export default function Books() {
       isbn: '',
       categoryIds: [],
       publishYear: '',
+      publisher: '',
       shelfBlock: '',
       shelfRow: '',
       stock: 0
@@ -68,6 +69,9 @@ export default function Books() {
 
   // Filter and sort logic
   const filteredBooks = books.filter((book) => {
+    // Exclude soft-deleted books from general list
+    if (book.isDeleted) return false;
+
     const matchesSearch = 
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,6 +117,7 @@ export default function Books() {
       isbn: '',
       categoryIds: [],
       publishYear: '',
+      publisher: '',
       shelfBlock: '',
       shelfRow: '',
       stock: 0
@@ -133,6 +138,7 @@ export default function Books() {
       isbn: book.isbn || '',
       categoryIds: book.categoryIds || [],
       publishYear: book.publishYear,
+      publisher: book.publisher || '',
       shelfBlock: block || '',
       shelfRow: row || '',
       stock: Number(book.stock) || 0
@@ -166,21 +172,26 @@ export default function Books() {
       isbn: data.isbn.trim(),
       categoryIds: data.categoryIds,
       publishYear: Number(data.publishYear),
+      publisher: data.publisher.trim(),
       shelfNo: combinedShelfNo,
       stock: Number(data.stock)
     };
 
-    if (modalMode === 'add') {
-      addBook({
-        id: Date.now().toString(),
-        ...bookData
-      });
-      toast.success('Kitap başarıyla eklendi!');
-    } else {
-      updateBook(currentBookId, bookData);
-      toast.success('Kitap başarıyla güncellendi!');
+    try {
+      if (modalMode === 'add') {
+        addBook({
+          id: Date.now().toString(),
+          ...bookData
+        });
+        toast.success('Kitap başarıyla eklendi!');
+      } else {
+        updateBook(currentBookId, bookData);
+        toast.success('Kitap başarıyla güncellendi!');
+      }
+      closeModal();
+    } catch (e) {
+      toast.error(e.message || 'Kitap kaydedilirken bir hata meydana geldi.');
     }
-    closeModal();
   };
 
   const handleDelete = (id, title) => {
@@ -343,6 +354,7 @@ export default function Books() {
               <tr style={styles.tableHeaderRow}>
                 <th style={styles.th}>Kitap Adı</th>
                 <th style={styles.th}>Yazar</th>
+                <th style={styles.th}>Yayıncı</th>
                 <th style={styles.th}>ISBN</th>
                 <th style={styles.th}>Kategoriler</th>
                 <th style={styles.th}>Yıl</th>
@@ -365,6 +377,7 @@ export default function Books() {
                       </div>
                     </td>
                     <td style={styles.td}>{book.author}</td>
+                    <td style={styles.td}>{book.publisher || '-'}</td>
                     <td style={styles.td}>
                       <span style={styles.isbnText}>{book.isbn || '-'}</span>
                     </td>
@@ -619,6 +632,21 @@ export default function Books() {
                     })}
                   />
                   {errors.publishYear && <span style={styles.errorText}>{errors.publishYear.message}</span>}
+                </div>
+
+                {/* Publisher */}
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Yayıncı *</label>
+                  <input
+                    type="text"
+                    placeholder="Yayıncı adını giriniz"
+                    style={{
+                      ...styles.input,
+                      borderColor: errors.publisher ? 'var(--error)' : 'var(--border-light)'
+                    }}
+                    {...register('publisher', { required: 'Yayıncı adı zorunludur!' })}
+                  />
+                  {errors.publisher && <span style={styles.errorText}>{errors.publisher.message}</span>}
                 </div>
 
                 {/* Shelf position block letter and row number */}
