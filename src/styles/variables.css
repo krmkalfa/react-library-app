@@ -1,0 +1,92 @@
+:root {
+  /* Font Family Definition */
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Color Palette - Indigo, Violet, Slate (Light Theme) */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  --indigo-50: #eef2ff;
+  --indigo-100: #e0e7ff;
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5;
+  --indigo-700: #4338ca;
+
+  --violet-500: #8b5cf6;
+  --violet-600: #7c3aed;
+
+  /* Theme Semantic Mappings (Light Mode) */
+  --bg-app: var(--slate-50);
+  --bg-sidebar: #ffffff;
+  --bg-navbar: rgba(255, 255, 255, 0.8);
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  
+  --text-main: var(--slate-800);
+  --text-muted: var(--slate-500);
+  --text-inverse: #ffffff;
+  
+  --border-light: var(--slate-200);
+  --border-focus: var(--indigo-500);
+  
+  --primary: var(--indigo-600);
+  --primary-hover: var(--indigo-700);
+  --primary-glow: rgba(99, 102, 241, 0.15);
+  
+  --accent: var(--violet-600);
+  
+  /* Glassmorphism Defaults */
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+  --glass-blur: blur(12px);
+
+  /* Alert States */
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
+
+  /* Transition timings */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Sidebar width */
+  --sidebar-width: 260px;
+}
+
+[data-theme='dark'] {
+  /* Theme Semantic Mappings (Dark Mode) */
+  --bg-app: var(--slate-950);
+  --bg-sidebar: var(--slate-900);
+  --bg-navbar: rgba(15, 23, 42, 0.8);
+  --bg-card: var(--slate-900);
+  --bg-input: var(--slate-950);
+
+  --text-main: var(--slate-100);
+  --text-muted: var(--slate-400);
+  --text-inverse: var(--slate-950);
+
+  --border-light: var(--slate-800);
+  --border-focus: var(--indigo-500);
+
+  --primary: var(--indigo-500);
+  --primary-hover: var(--indigo-600);
+  --primary-glow: rgba(99, 102, 241, 0.3);
+
+  --accent: var(--violet-500);
+
+  /* Glassmorphism Defaults */
+  --glass-bg: rgba(15, 23, 42, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-blur: blur(12px);
+}
