@@ -8,6 +8,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Pages
+import Homepage from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Books from './pages/Books';
 import Members from './pages/Members';
@@ -31,8 +32,8 @@ function App() {
 
             {/* Layout Shell */}
             <Route path="/" element={<MainLayout />}>
-              {/* Default Redirect to Dashboard */}
-              <Route index element={<Navigate to="/dashboard" replace />} />
+              {/* Default Home Page */}
+              <Route index element={<Homepage />} />
               
               {/* Public Screen Route (Guest Accessible) */}
               <Route path="books" element={<Books />} />
