@@ -11,7 +11,8 @@ import {
   FiBookmark,
   FiKey,
   FiChevronLeft,
-  FiChevronRight
+  FiChevronRight,
+  FiHome
 } from 'react-icons/fi';
 
 export default function Sidebar({ collapsed, toggleCollapsed }) {
@@ -22,12 +23,14 @@ export default function Sidebar({ collapsed, toggleCollapsed }) {
 
   // Menu items for guest users (unauthenticated)
   const guestItems = [
+    { path: '/', label: 'Ana Sayfa', icon: FiHome },
     { path: '/dashboard', label: 'Dashboard', icon: FiGrid },
     { path: '/books', label: 'Kitaplar', icon: FiBook },
   ];
 
   // Menu items for library members
   const memberItems = [
+    { path: '/', label: 'Ana Sayfa', icon: FiHome },
     { path: '/dashboard', label: 'Dashboard', icon: FiGrid },
     { path: '/books', label: 'Kitaplar', icon: FiBook },
     { path: '/my-books', label: 'Kitaplarım', icon: FiBookmark },
@@ -36,6 +39,7 @@ export default function Sidebar({ collapsed, toggleCollapsed }) {
 
   // Full admin panel routes (excluding standalone Categories page)
   const adminItems = [
+    { path: '/', label: 'Ana Sayfa', icon: FiHome },
     { path: '/dashboard', label: 'Dashboard', icon: FiGrid },
     { path: '/books', label: 'Kitaplar', icon: FiBook },
     { path: '/members', label: 'Üyeler', icon: FiUsers },
