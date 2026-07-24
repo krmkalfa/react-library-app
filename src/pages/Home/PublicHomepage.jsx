@@ -2,9 +2,11 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiBook, FiUsers, FiLayers, FiCheckCircle } from 'react-icons/fi';
 import heroImg from '../../assets/hero.png';
+import { useStatsStore } from '../../store/useStatsStore';
 
 export default function Homepage() {
   const navigate = useNavigate();
+  const { totalBooksCreated, totalMembersRegistered, totalLoansMade } = useStatsStore();
 
   return (
     <div style={styles.container}>
@@ -23,20 +25,20 @@ export default function Homepage() {
           <div style={styles.statsContainer}>
             <div style={styles.statBox}>
               <FiUsers style={styles.statIcon} />
-              <h3 style={styles.statNumber}>1.500+</h3>
-              <p style={styles.statLabel}>Aktif Üye</p>
+              <h3 style={styles.statNumber}>{totalMembersRegistered}+</h3>
+              <p style={styles.statLabel}>Okuyucu</p>
             </div>
             <div style={styles.statDivider} />
             <div style={styles.statBox}>
               <FiLayers style={styles.statIcon} />
-              <h3 style={styles.statNumber}>100+</h3>
-              <p style={styles.statLabel}>Farklı Kategori</p>
+              <h3 style={styles.statNumber}>{totalLoansMade}+</h3>
+              <p style={styles.statLabel}>Ödünç İşlemi</p>
             </div>
             <div style={styles.statDivider} />
             <div style={styles.statBox}>
               <FiBook style={styles.statIcon} />
-              <h3 style={styles.statNumber}>10.000+</h3>
-              <p style={styles.statLabel}>Zengin Kitap</p>
+              <h3 style={styles.statNumber}>{totalBooksCreated}+</h3>
+              <p style={styles.statLabel}>Kitap</p>
             </div>
           </div>
         </div>

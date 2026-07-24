@@ -1,12 +1,42 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useBookStore } from './useBookStore.js';
+import { useMemberStore } from './useMemberStore.js';
+import { useStatsStore } from './useStatsStore.js';
+import { toast } from 'react-toastify';
 
 export const useLoanStore = create(
   persist(
     (set, get) => ({
-      // State representing the historical and active record of book loans
-      loans: [],
+      // State representing the historical and active record of book loans with mock data
+      loans: [
+        {
+          id: 'loan-1',
+          bookId: 'book-1',
+          bookTitle: 'Clean Code',
+          bookAuthor: 'Robert C. Martin',
+          bookIsbn: '9780132350884',
+          memberId: 'member-1',
+          memberName: 'Ahmet Yılmaz',
+          loanDate: '2026-07-01',
+          dueDate: '2026-08-01',
+          returnDate: null,
+          status: 'active'
+        },
+        {
+          id: 'loan-2',
+          bookId: 'book-3',
+          bookTitle: 'Simyacı',
+          bookAuthor: 'Paulo Coelho',
+          bookIsbn: '9789750726439',
+          memberId: 'member-2',
+          memberName: 'Ayşe Kaya',
+          loanDate: '2026-06-15',
+          dueDate: '2026-07-15',
+          returnDate: '2026-07-10',
+          status: 'returned'
+        }
+      ],
 
       /**
        * Creates a new loan record for a member borrowing a book.
@@ -23,6 +53,13 @@ export const useLoanStore = create(
           throw new Error('The requested book could not be found in the catalog.');
         }
 
+        const memberStore = useMemberStore.getState();
+        const member = memberStore.members.find((m) => String(m.id) === String(loanData.memberId));
+
+        if (!member) {
+          throw new Error('The requested member could not be found.');
+        }
+
         const stockCount = Number(book.stock) || 0;
         if (stockCount <= 0) {
           throw new Error(`The book "${book.title}" is currently out of stock.`);
@@ -36,6 +73,10 @@ export const useLoanStore = create(
           id: Date.now().toString(),
           bookId: loanData.bookId,
           memberId: loanData.memberId,
+          bookTitle: book.title,
+          bookAuthor: book.author,
+          bookIsbn: book.isbn || '',
+          memberName: member.fullName,
           loanDate: today,
           status: 'active',
           returnDate: null,
@@ -49,6 +90,8 @@ export const useLoanStore = create(
         set((state) => ({
           loans: [...state.loans, newLoan],
         }));
+
+        useStatsStore.getState().incrementLoans();
       },
 
       /**
@@ -105,6 +148,33 @@ export const useLoanStore = create(
             bookStore.deleteBook(loan.bookId);
           }
         }
+      },
+
+      /**
+       * Extends the due date of an active loan.
+       * @param {string|number} loanId - The ID of the loan.
+       * @param {string} newDueDate - The new due date.
+       */
+      extendDueDate: (loanId, newDueDate) => {
+        set((state) => ({
+          loans: state.loans.map((l) =>
+            String(l.id) === String(loanId) ? { ...l, dueDate: newDueDate } : l
+          ),
+        }));
+        toast.success("Son teslim tarihi başarıyla uzatıldı!");
+      },
+
+      /**
+       * Hides a returned loan from the borrowing member's perspective.
+       * @param {string|number} loanId - The ID of the loan record.
+       */
+      deleteLoanHistory: (loanId) => {
+        set((state) => ({
+          loans: state.loans.map((l) =>
+            String(l.id) === String(loanId) ? { ...l, hiddenByMember: true } : l
+          ),
+        }));
+        toast.success("Geçmiş kaydı başarıyla silindi");
       },
     }),
     {

@@ -24,14 +24,18 @@ export default function Login() {
     // Artificial slight delay for micro-animation loading effect
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const success = login(data.username, data.password);
+    const loggedInUser = login(data.username, data.password);
 
-    if (success) {
-      toast.success(`Giriş başarılı, tekrar hoş geldiniz ${data.username}!`, {
+    if (loggedInUser) {
+      toast.success(`Giriş başarılı, tekrar hoş geldiniz ${loggedInUser.username || data.username}!`, {
         position: 'top-right',
         autoClose: 3000,
       });
-      navigate('/dashboard');
+      if (loggedInUser.role === 'admin') {
+        navigate('/dashboard');
+      } else {
+        navigate('/my-books');
+      }
     } else {
       toast.error('Geçersiz kullanıcı adı veya şifre. Lütfen tekrar deneyin.', {
         position: 'top-right',

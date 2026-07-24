@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useLoanStore } from './useLoanStore.js';
+import { useStatsStore } from './useStatsStore.js';
 
 export const useBookStore = create(
   persist(
@@ -65,6 +66,8 @@ export const useBookStore = create(
         if (duplicate) {
           throw new Error("Bu kitap ismi, yazar ve yayın yılına sahip bir kitap sistemde zaten kayıtlı!");
         }
+
+        useStatsStore.getState().incrementBooks();
 
         return { books: [...state.books, { ...book, isDeleted: false }] };
       }),

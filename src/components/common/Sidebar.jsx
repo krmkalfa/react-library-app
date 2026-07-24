@@ -31,7 +31,6 @@ export default function Sidebar({ collapsed, toggleCollapsed }) {
   // Menu items for library members
   const memberItems = [
     { path: '/', label: 'Ana Sayfa', icon: FiHome },
-    { path: '/dashboard', label: 'Dashboard', icon: FiGrid },
     { path: '/books', label: 'Kitaplar', icon: FiBook },
     { path: '/my-books', label: 'Kitaplarım', icon: FiBookmark },
     { path: '/change-password', label: 'Şifre Değiştir', icon: FiKey },
@@ -39,7 +38,6 @@ export default function Sidebar({ collapsed, toggleCollapsed }) {
 
   // Full admin panel routes (excluding standalone Categories page)
   const adminItems = [
-    { path: '/', label: 'Ana Sayfa', icon: FiHome },
     { path: '/dashboard', label: 'Dashboard', icon: FiGrid },
     { path: '/books', label: 'Kitaplar', icon: FiBook },
     { path: '/members', label: 'Üyeler', icon: FiUsers },

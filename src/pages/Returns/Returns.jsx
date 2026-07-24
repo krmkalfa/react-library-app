@@ -19,15 +19,15 @@ export default function Returns() {
   );
 
   // Book title resolver
-  const getBookTitle = (bookId) => {
+  const getBookTitle = (bookId, loan) => {
     const book = books.find((b) => String(b.id) === String(bookId));
-    return book ? book.title : 'Bilinmeyen Kitap';
+    return book ? book.title : (loan?.bookTitle || 'Bilinmeyen Kitap');
   };
 
   // Book author resolver
-  const getBookAuthor = (bookId) => {
+  const getBookAuthor = (bookId, loan) => {
     const book = books.find((b) => String(b.id) === String(bookId));
-    return book ? book.author : 'Bilinmeyen Yazar';
+    return book ? book.author : (loan?.bookAuthor || 'Bilinmeyen Yazar');
   };
 
   const handleReturn = (loanId, bookTitle) => {
@@ -99,7 +99,7 @@ export default function Returns() {
             </thead>
             <tbody>
               {memberActiveLoans.map((loan) => {
-                const bookTitle = getBookTitle(loan.bookId);
+                const bookTitle = getBookTitle(loan.bookId, loan);
                 return (
                   <tr key={loan.id} style={styles.tableRow}>
                     <td style={styles.td}>
@@ -110,7 +110,7 @@ export default function Returns() {
                         <span style={styles.bookTitle}>{bookTitle}</span>
                       </div>
                     </td>
-                    <td style={styles.td}>{getBookAuthor(loan.bookId)}</td>
+                    <td style={styles.td}>{getBookAuthor(loan.bookId, loan)}</td>
                     <td style={styles.td}>{loan.loanDate}</td>
                     <td style={styles.td}>{loan.dueDate}</td>
                     <td style={{ ...styles.td, textAlign: 'right' }}>

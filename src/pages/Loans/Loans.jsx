@@ -15,7 +15,7 @@ import {
 } from 'react-icons/fi';
 
 export default function Loans() {
-  const { loans, createLoan } = useLoanStore();
+  const { loans, createLoan, extendDueDate } = useLoanStore();
   const { books } = useBookStore();
   const { members } = useMemberStore();
 
@@ -24,6 +24,10 @@ export default function Loans() {
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
+  const [selectedLoan, setSelectedLoan] = useState(null);
+  const [newDueDate, setNewDueDate] = useState('');
+  const [extendError, setExtendError] = useState('');
 
   // Helper to generate a default due date exactly 1 month from today
   const getDefaultDueDate = () => {
@@ -53,15 +57,15 @@ export default function Loans() {
   const activeLoans = loans.filter((l) => l.status === 'active');
 
   // Book name resolver
-  const getBookTitle = (bookId) => {
+  const getBookTitle = (bookId, loan) => {
     const book = books.find((b) => String(b.id) === String(bookId));
-    return book ? book.title : 'Bilinmeyen Kitap';
+    return book ? book.title : (loan?.bookTitle || 'Bilinmeyen Kitap');
   };
 
   // Member name resolver
-  const getMemberName = (memberId) => {
+  const getMemberName = (memberId, loan) => {
     const member = members.find((m) => String(m.id) === String(memberId));
-    return member ? member.fullName : 'Bilinmeyen Üye';
+    return member ? member.fullName : (loan?.memberName || 'Bilinmeyen Üye');
   };
 
   // Calculate remaining days
@@ -98,8 +102,8 @@ export default function Loans() {
   // Filter list based on search term
   const filteredLoans = activeLoans.filter((loan) => {
     const searchString = searchTerm.toLowerCase();
-    const bookTitle = getBookTitle(loan.bookId).toLowerCase();
-    const memberName = getMemberName(loan.memberId).toLowerCase();
+    const bookTitle = getBookTitle(loan.bookId, loan).toLowerCase();
+    const memberName = getMemberName(loan.memberId, loan).toLowerCase();
     return bookTitle.includes(searchString) || memberName.includes(searchString);
   });
 
@@ -114,6 +118,40 @@ export default function Loans() {
 
   const closeModal = () => {
     setIsModalOpen(false);
+  };
+
+  const openExtendModal = (loan) => {
+    setSelectedLoan(loan);
+    setNewDueDate(loan.dueDate);
+    setExtendError('');
+    setIsExtendModalOpen(true);
+  };
+
+  const closeExtendModal = () => {
+    setSelectedLoan(null);
+    setNewDueDate('');
+    setExtendError('');
+    setIsExtendModalOpen(false);
+  };
+
+  const handleExtendSubmit = (e) => {
+    e.preventDefault();
+    if (!newDueDate) {
+      setExtendError('Yeni bir tarih seçilmelidir.');
+      return;
+    }
+    const current = new Date(selectedLoan.dueDate);
+    current.setHours(0,0,0,0);
+    const selected = new Date(newDueDate);
+    selected.setHours(0,0,0,0);
+
+    if (selected < current) {
+      setExtendError('Yeni son teslim tarihi mevcut tarihten eski olamaz.');
+      return;
+    }
+
+    extendDueDate(selectedLoan.id, newDueDate);
+    closeExtendModal();
   };
 
   const onSubmitForm = (data) => {
@@ -174,6 +212,7 @@ export default function Loans() {
                 <th style={styles.th}>Ödünç Tarihi</th>
                 <th style={styles.th}>Son Teslim Tarihi</th>
                 <th style={styles.th}>Kalan Süre</th>
+                <th style={{ ...styles.th, textAlign: 'right' }}>İşlemler</th>
               </tr>
             </thead>
             <tbody>
@@ -186,16 +225,25 @@ export default function Loans() {
                         <div style={styles.bookIconCircle}>
                           <FiBookOpen style={styles.bookIcon} />
                         </div>
-                        <span style={styles.bookTitle}>{getBookTitle(loan.bookId)}</span>
+                        <span style={styles.bookTitle}>{getBookTitle(loan.bookId, loan)}</span>
                       </div>
                     </td>
-                    <td style={styles.td}>{getMemberName(loan.memberId)}</td>
+                    <td style={styles.td}>{getMemberName(loan.memberId, loan)}</td>
                     <td style={styles.td}>{loan.loanDate}</td>
                     <td style={styles.td}>{loan.dueDate}</td>
                     <td style={styles.td}>
                       <span style={{ ...styles.badge, ...remaining.style }}>
                         {remaining.text}
                       </span>
+                    </td>
+                    <td style={{ ...styles.td, textAlign: 'right' }}>
+                      <button
+                        onClick={() => openExtendModal(loan)}
+                        style={styles.extendBtn}
+                        title="Tarih Uzat"
+                      >
+                        <FiCalendar />
+                      </button>
                     </td>
                   </tr>
                 );
@@ -310,6 +358,71 @@ export default function Loans() {
                 </button>
                 <button type="submit" style={styles.saveBtn}>
                   Ödünç Ver
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Extend Due Date Modal */}
+      {isExtendModalOpen && selectedLoan && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>Süreyi Uzat</h2>
+              <button onClick={closeExtendModal} style={styles.closeBtn}>
+                <FiX />
+              </button>
+            </div>
+
+            <form onSubmit={handleExtendSubmit} style={styles.form}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Kitap Adı</label>
+                <div style={{ ...styles.input, background: 'rgba(255, 255, 255, 0.05)', cursor: 'not-allowed', color: 'var(--text-muted)' }}>
+                  {getBookTitle(selectedLoan.bookId, selectedLoan)}
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Ödünç Alan Üye</label>
+                <div style={{ ...styles.input, background: 'rgba(255, 255, 255, 0.05)', cursor: 'not-allowed', color: 'var(--text-muted)' }}>
+                  {getMemberName(selectedLoan.memberId, selectedLoan)}
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Mevcut Son Teslim Tarihi</label>
+                <div style={{ ...styles.input, background: 'rgba(255, 255, 255, 0.05)', cursor: 'not-allowed', color: 'var(--text-muted)' }}>
+                  {selectedLoan.dueDate}
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Yeni Son Teslim Tarihi *</label>
+                <input
+                  type="date"
+                  min={selectedLoan.dueDate}
+                  value={newDueDate}
+                  onChange={(e) => {
+                    setNewDueDate(e.target.value);
+                    setExtendError('');
+                  }}
+                  style={{
+                    ...styles.input,
+                    borderColor: extendError ? 'var(--error)' : 'var(--border-light)'
+                  }}
+                  required
+                />
+                {extendError && <span style={styles.errorText}>{extendError}</span>}
+              </div>
+
+              <div style={styles.modalFooter}>
+                <button type="button" onClick={closeExtendModal} style={styles.cancelBtn}>
+                  Vazgeç
+                </button>
+                <button type="submit" className="btn" style={styles.saveBtn}>
+                  Uzat
                 </button>
               </div>
             </form>
@@ -584,5 +697,18 @@ const styles = {
     fontSize: '0.8rem',
     color: 'var(--text-muted)',
     fontStyle: 'italic',
+  },
+  extendBtn: {
+    background: 'none',
+    border: 'none',
+    color: 'var(--primary)',
+    padding: '0.5rem',
+    cursor: 'pointer',
+    borderRadius: '6px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all var(--transition-fast)',
+    fontSize: '1.1rem',
   },
 };
