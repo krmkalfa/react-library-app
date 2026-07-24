@@ -2,11 +2,11 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-export default function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+export default function ProtectedRoute({ children, adminOnly = false }) {
+  const { user, loading, isLoading } = useAuth();
 
   // If session authorization is loading, render a premium placeholder loader
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <div style={styles.loaderContainer}>
         <div className="spinner" style={styles.spinner}></div>
@@ -18,6 +18,11 @@ export default function ProtectedRoute({ children }) {
   // Redirect to login if user is not authenticated
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Redirect non-admins to their own books if page is admin-only
+  if (adminOnly && user.role !== 'admin') {
+    return <Navigate to="/my-books" replace />;
   }
 
   return children;

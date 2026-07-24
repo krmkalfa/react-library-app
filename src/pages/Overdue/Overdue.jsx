@@ -22,15 +22,15 @@ export default function Overdue() {
   });
 
   // Book title resolver
-  const getBookTitle = (bookId) => {
+  const getBookTitle = (bookId, loan) => {
     const book = books.find((b) => String(b.id) === String(bookId));
-    return book ? book.title : 'Bilinmeyen Kitap';
+    return book ? book.title : (loan?.bookTitle || 'Bilinmeyen Kitap');
   };
 
   // Member resolver
-  const getMemberData = (memberId) => {
+  const getMemberData = (memberId, loan) => {
     const member = members.find((m) => String(m.id) === String(memberId));
-    return member ? member : { fullName: 'Bilinmeyen Üye', phone: '-', email: '-' };
+    return member ? member : { fullName: loan?.memberName || 'Bilinmeyen Üye', phone: '-', email: '-' };
   };
 
   // Calculate delay in days
@@ -66,7 +66,7 @@ export default function Overdue() {
             </thead>
             <tbody>
               {overdueLoans.map((loan) => {
-                const member = getMemberData(loan.memberId);
+                const member = getMemberData(loan.memberId, loan);
                 const delayDays = getOverdueDays(loan.dueDate);
                 return (
                   <tr key={loan.id} style={styles.tableRow}>
@@ -75,7 +75,7 @@ export default function Overdue() {
                         <div style={styles.alertIconCircle}>
                           <FiAlertTriangle style={styles.alertIcon} />
                         </div>
-                        <span style={styles.bookTitle}>{getBookTitle(loan.bookId)}</span>
+                        <span style={styles.bookTitle}>{getBookTitle(loan.bookId, loan)}</span>
                       </div>
                     </td>
                     <td style={styles.td}>{member.fullName}</td>

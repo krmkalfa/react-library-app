@@ -28,8 +28,8 @@ export default function MemberHomepage() {
 
   // 1. Kullanıcı İstatistikleri
   const userLoans = useMemo(
-    () => loans.filter((l) => l.memberId === user.id),
-    [loans, user.id],
+    () => loans.filter((l) => String(l.memberId) === String(user?.memberId)),
+    [loans, user?.memberId],
   );
   const totalBorrowed = userLoans.length;
   const readBooks = userLoans.filter((l) => l.status === "returned").length;
@@ -132,6 +132,31 @@ export default function MemberHomepage() {
     </div>
   );
 
+  // Helper to render a highly premium minimal dynamic cover card
+  const renderBookCover = (book) => {
+    const colors = [
+      'linear-gradient(135deg, #4f46e5, #3b82f6)', // Indigo-Blue
+      'linear-gradient(135deg, #10b981, #059669)', // Emerald-Green
+      'linear-gradient(135deg, #f59e0b, #d97706)', // Amber-Orange
+      'linear-gradient(135deg, #ec4899, #be185d)', // Pink-Rose
+      'linear-gradient(135deg, #8b5cf6, #7c3aed)', // Violet-Purple
+      'linear-gradient(135deg, #ef4444, #dc2626)'  // Red
+    ];
+    const index = Math.abs(book.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % colors.length;
+    const background = colors[index];
+
+    return (
+      <div style={{
+        ...styles.customBookCover,
+        background: background
+      }}>
+        <div style={styles.customBookCoverTitle}>{book.title}</div>
+        <div style={styles.customBookCoverAuthor}>{book.author}</div>
+        <div style={styles.customBookCoverBadge}>BiblioTech</div>
+      </div>
+    );
+  };
+
   // Carousel için özel büyük kitap kartı render fonksiyonu
   const renderCarouselBookCard = (book) => (
     <div
@@ -139,19 +164,10 @@ export default function MemberHomepage() {
       style={styles.carouselBookCard}
       onClick={() => navigate("/books")}
     >
-      <div style={styles.carouselBookImageWrapper}>
-        <img
-          src={`https://picsum.photos/seed/${book.id}/200/250`}
-          alt={book.title}
-          style={styles.carouselBookImage}
-        />
-      </div>
-      <div style={styles.carouselBookInfo}>
-        <h3 style={styles.carouselBookTitle}>{book.title}</h3>
-        <h5 style={styles.carouselBookDesc}>
-          Bu sürükleyici eser, okuyucuya derin bir perspektif sunarak yazarın
-          tarzını en iyi yansıtan kitaplardan biridir.
-        </h5>
+      <h3 style={styles.carouselBookTitle}>{book.title}</h3>
+      <p style={styles.carouselBookAuthor}>{book.author}</p>
+      <div style={styles.publisherBadge}>
+        {book.publisher || "Bilgi Yayınevi"}
       </div>
     </div>
   );
@@ -698,44 +714,47 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "flex-start",
-    padding: "2.5rem 2rem",
+    justifyContent: "center",
+    padding: "2rem",
     cursor: "pointer",
-    transition: "background 0.2s ease",
+    transition: "all var(--transition-fast) ease",
     textAlign: "center",
-  },
-  carouselBookImageWrapper: {
-    width: "100%",
-    height: "280px",
-    marginBottom: "2rem",
-    borderRadius: "16px",
-    overflow: "hidden",
-    boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
-    border: "1px solid var(--border-light)",
-  },
-  carouselBookImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  carouselBookInfo: {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
+    boxSizing: "border-box",
+    minHeight: "180px",
   },
   carouselBookTitle: {
-    margin: "0 0 1rem 0",
-    fontSize: "1.5rem",
-    fontWeight: "900",
+    margin: "0 0 0.5rem 0",
+    fontSize: "1.25rem",
+    fontWeight: "700",
     color: "var(--text-main)",
-    lineHeight: "1.2",
+    lineHeight: "1.3",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
   },
-  carouselBookDesc: {
-    margin: 0,
+  carouselBookAuthor: {
+    margin: "0 0 1rem 0",
     fontSize: "0.95rem",
     color: "var(--text-muted)",
-    opacity: 0.75,
-    lineHeight: "1.6",
-    fontWeight: "400",
+    fontWeight: "500",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    width: "100%",
+  },
+  publisherBadge: {
+    background: "rgba(99, 102, 241, 0.1)",
+    color: "var(--primary)",
+    padding: "0.25rem 0.75rem",
+    borderRadius: "20px",
+    fontSize: "0.75rem",
+    fontWeight: "600",
+    display: "inline-block",
+    maxWidth: "100%",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
 };

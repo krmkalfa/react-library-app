@@ -52,14 +52,14 @@ export default function Dashboard() {
   const last5Members = [...members].slice(-5).reverse();
 
   // Helper title resolvers for lists
-  const getBookTitle = (bookId) => {
+  const getBookTitle = (bookId, loan) => {
     const book = books.find((b) => String(b.id) === String(bookId));
-    return book ? book.title : 'Bilinmeyen Kitap';
+    return book ? book.title : (loan?.bookTitle || 'Bilinmeyen Kitap');
   };
 
-  const getMemberName = (memberId) => {
+  const getMemberName = (memberId, loan) => {
     const member = members.find((m) => String(m.id) === String(memberId));
-    return member ? member.fullName : 'Bilinmeyen Üye';
+    return member ? member.fullName : (loan?.memberName || 'Bilinmeyen Üye');
   };
 
   const statCards = [
@@ -149,8 +149,8 @@ export default function Dashboard() {
                 <tbody>
                   {last5Loans.map((loan) => (
                     <tr key={loan.id} style={styles.tableRow}>
-                      <td style={styles.td}>{getBookTitle(loan.bookId)}</td>
-                      <td style={styles.td}>{getMemberName(loan.memberId)}</td>
+                      <td style={styles.td}>{getBookTitle(loan.bookId, loan)}</td>
+                      <td style={styles.td}>{getMemberName(loan.memberId, loan)}</td>
                       <td style={styles.td}>{loan.loanDate}</td>
                       <td style={styles.td}>
                         {loan.status === 'active' ? (

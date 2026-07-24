@@ -29,11 +29,11 @@ export function AuthProvider({ children }) {
    */
   const login = (usernameOrEmail, password) => {
     // 1. Check default administrative credentials
-    if (usernameOrEmail === 'admin' && password === 'admin123') {
+    if (usernameOrEmail === 'admin' && password === 'admin') {
       const adminUser = { username: 'admin', role: 'admin' };
       setUser(adminUser);
       localStorage.setItem('library_auth', JSON.stringify(adminUser));
-      return true;
+      return adminUser;
     }
 
     // 2. Query registered members from the member store
@@ -58,11 +58,11 @@ export function AuthProvider({ children }) {
         };
         setUser(memberUser);
         localStorage.setItem('library_auth', JSON.stringify(memberUser));
-        return true;
+        return memberUser;
       }
     }
 
-    return false;
+    return null;
   };
 
   /**
@@ -74,7 +74,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, isLoading: loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

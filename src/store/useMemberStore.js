@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useStatsStore } from './useStatsStore.js';
 
 // Helper to generate a unique 8-digit random member number
 export const generateUniqueMemberNo = (members) => {
@@ -17,7 +18,24 @@ export const useMemberStore = create(
   persist(
     (set) => ({
       // State representing the list of library members
-      members: [],
+      members: [
+        {
+          id: 'member-1',
+          fullName: 'Ahmet Yılmaz',
+          email: 'ahmet@gmail.com',
+          phone: '05321112233',
+          memberNo: '12345678',
+          password: 'password123'
+        },
+        {
+          id: 'member-2',
+          fullName: 'Ayşe Kaya',
+          email: 'ayse@gmail.com',
+          phone: '05332223344',
+          memberNo: '87654321',
+          password: 'password123'
+        }
+      ],
 
       /**
        * Adds a new member to the library system.
@@ -51,6 +69,8 @@ export const useMemberStore = create(
           phone: incomingPhone, // Store cleaned phone number
           password: member.password || finalMemberNo // Default password to memberNo
         };
+
+        useStatsStore.getState().incrementMembers();
 
         return {
           members: [...state.members, newMember]

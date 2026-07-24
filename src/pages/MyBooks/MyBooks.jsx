@@ -2,32 +2,32 @@ import React, { useState } from 'react';
 import { useLoanStore } from '../../store/useLoanStore';
 import { useBookStore } from '../../store/useBookStore';
 import { useAuth } from '../../context/AuthContext';
-import { FiBookOpen, FiClock, FiCheckCircle, FiInfo } from 'react-icons/fi';
+import { FiBookOpen, FiClock, FiCheckCircle, FiInfo, FiTrash2 } from 'react-icons/fi';
 
 export default function MyBooks() {
-  const { loans } = useLoanStore();
+  const { loans, deleteLoanHistory } = useLoanStore();
   const { books } = useBookStore();
   const { user } = useAuth();
 
   // Tab control state
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
 
-  // Retrieve active and past loans for the logged-in member
-  const myLoans = loans.filter((l) => String(l.memberId) === String(user?.memberId));
+  // Retrieve active and past loans for the logged-in member, excluding those hidden by member
+  const myLoans = loans.filter((l) => String(l.memberId) === String(user?.memberId) && !l.hiddenByMember);
   
   const myActiveLoans = myLoans.filter((l) => l.status === 'active');
   const myPastLoans = myLoans.filter((l) => l.status === 'returned');
 
   // Book title resolver
-  const getBookTitle = (bookId) => {
+  const getBookTitle = (bookId, loan) => {
     const book = books.find((b) => String(b.id) === String(bookId));
-    return book ? book.title : 'Bilinmeyen Kitap';
+    return book ? book.title : (loan?.bookTitle || 'Bilinmeyen Kitap');
   };
 
   // Book author resolver
-  const getBookAuthor = (bookId) => {
+  const getBookAuthor = (bookId, loan) => {
     const book = books.find((b) => String(b.id) === String(bookId));
-    return book ? book.author : 'Bilinmeyen Yazar';
+    return book ? book.author : (loan?.bookAuthor || 'Bilinmeyen Yazar');
   };
 
   // Soft-deleted check
@@ -113,7 +113,10 @@ export default function MyBooks() {
                     <th style={styles.th}>Kalan Süre</th>
                   </>
                 ) : (
-                  <th style={styles.th}>İade Edilme Tarihi</th>
+                  <>
+                    <th style={styles.th}>İade Edilme Tarihi</th>
+                    <th style={{ ...styles.th, textAlign: 'right' }}>İşlem</th>
+                  </>
                 )}
               </tr>
             </thead>
@@ -126,7 +129,7 @@ export default function MyBooks() {
                         <FiBookOpen style={styles.bookIcon} />
                       </div>
                       <div style={styles.bookTitleWrapper}>
-                        <span style={styles.bookTitle}>{getBookTitle(loan.bookId)}</span>
+                        <span style={styles.bookTitle}>{getBookTitle(loan.bookId, loan)}</span>
                         {activeTab === 'active' && isBookDeleted(loan.bookId) && (
                           <div style={styles.archiveBadgeContainer}>
                             <span style={styles.archiveBadge}>Arşivlendi / Envanter Dışı</span>
@@ -141,7 +144,7 @@ export default function MyBooks() {
                       </div>
                     </div>
                   </td>
-                  <td style={styles.td}>{getBookAuthor(loan.bookId)}</td>
+                  <td style={styles.td}>{getBookAuthor(loan.bookId, loan)}</td>
                   <td style={styles.td}>{loan.loanDate}</td>
                   {activeTab === 'active' ? (
                     <>
@@ -153,7 +156,22 @@ export default function MyBooks() {
                       </td>
                     </>
                   ) : (
-                    <td style={styles.td}>{loan.returnDate}</td>
+                    <>
+                      <td style={styles.td}>{loan.returnDate}</td>
+                      <td style={{ ...styles.td, textAlign: 'right' }}>
+                        <button
+                          onClick={() => {
+                            if (window.confirm("Bu iade kaydını geçmişinizden silmek istediğinize emin misiniz?")) {
+                              deleteLoanHistory(loan.id);
+                            }
+                          }}
+                          style={styles.deleteHistoryBtn}
+                          title="Geçmişten Kaldır"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </td>
+                    </>
                   )}
                 </tr>
               ))}
@@ -365,5 +383,18 @@ const styles = {
     fontSize: '0.9rem',
     color: 'var(--text-muted)',
     maxWidth: '360px',
+  },
+  deleteHistoryBtn: {
+    background: 'none',
+    border: 'none',
+    color: 'var(--error)',
+    padding: '0.4rem',
+    cursor: 'pointer',
+    borderRadius: '4px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all var(--transition-fast)',
+    fontSize: '1rem',
   },
 };
